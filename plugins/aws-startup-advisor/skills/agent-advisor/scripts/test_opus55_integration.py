@@ -419,3 +419,21 @@ def test_assessment_eligibility_precedes_same_model_shortcuts(cloud):
     )[0]
     assert "selected target is the same eligible source model" in assessment.lower()
     assert "model_change: false" in assessment
+
+
+@pytest.mark.parametrize("cloud", ["gcp-to-aws", "azure-to-aws"])
+def test_assessment_same_model_pricing_keeps_opus_flat_and_gpt_tiers_scoped(cloud):
+    text = (SKILLS / cloud / "references/phases/design/design-ai.md").read_text()
+    assessment = text.split("**Stay-or-migrate", 1)[1].split("**Quota risk", 1)[0]
+    assert "**GPT-5.6 only:**" in assessment
+    assert "2.0x input" in assessment and "1.5x output" in assessment
+    assert "**Opus 5.5:**" in assessment
+    assert "flat" in assessment and "full 1M" in assessment
+    assert "do not apply the GPT multiplier" in assessment
+    assert _script("model_identity").same_model(
+        "anthropic", "claude-opus-5-5", "global." + MODEL
+    )
+    rates = _script("bedrock_pricing").lookup("us-east-1", "global." + MODEL)
+    assert rates["available"]
+    cost = 400 * rates["input_per_1k_usd"] + 20 * rates["output_per_1k_usd"]
+    assert cost == pytest.approx(2.00)

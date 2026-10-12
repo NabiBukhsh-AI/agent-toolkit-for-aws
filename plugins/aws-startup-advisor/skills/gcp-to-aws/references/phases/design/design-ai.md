@@ -219,15 +219,23 @@ otherwise use the cost-comparison cases below with `model_change` reflecting the
 
 - **Selected target is the same eligible source model**, available on Bedrock AND carried by the target region →
   `"strong_migrate"`. Set `model_change: false`. The rationale is risk (no behavior delta) plus AWS commitments,
-  governance, and residency — **not** cost: Bedrock in-region is priced at OpenAI's data-residency-tier rate, about
-  10% above OpenAI standard, so report a modest cost increase rather than parity. Do not downgrade the assessment for
-  that ~10%, and do not claim it is free. If the workload exceeds 272K context, price it at the long-context tier
-  (2.0x input, 1.5x output) — the gap is then substantial and may change the recommendation.
+  governance, and residency — **not** an assumed cost saving. Price the actual model and inference option using
+  the model-specific rules below; same identity does not imply cost parity or a universal premium.
 - Source model on Bedrock but the target region does not carry it → treat as no-same-model below, and record the
   region as the cause in `regional_warnings[]`. Do not report this as a model-quality judgment.
 - Bedrock cheaper → `"strong_migrate"`
 - Bedrock within 25% of source AND priority != cost → `"moderate_migrate"`
 - Source > 25% cheaper AND priority = cost → `"weak_migrate"` or `"recommend_stay"`
+
+**Model-specific same-model pricing:** for OpenAI GPT targets, read
+`references/shared/openai-on-bedrock.md`: verified In-Region/Geo options use the
+data-residency-tier premium, while supported Global CRIS uses standard-rate parity.
+Report the actual option; do not downgrade solely for the modest verified premium.
+**GPT-5.6 only:** above 272K context, apply 2.0x input and 1.5x output rates only when
+the selected model and inference option support that tier; the resulting gap may change
+the assessment. GPT-5.5/5.4 have no 1M tier. **Opus 5.5:** use the selected region/profile's
+flat rates from `references/shared/pricing-cache.md` throughout the full 1M context;
+do not apply the GPT multiplier. Verify other models' tiers individually.
 
 Overall assessment = weakest across all models. If any `"recommend_stay"`, flag prominently.
 

@@ -139,13 +139,23 @@ each workload:
 
 **Stay-or-migrate (after eligibility filtering and final target selection):** selected target is the same eligible source model,
 available on Bedrock AND carried by the region →
-`strong_migrate`, `model_change: false` (the rationale is risk + governance, not cost; Bedrock
-in-region runs ~10% above OpenAI standard — report a modest increase, not parity, and never
-claim free). Otherwise keep `model_change` consistent with the final target and use the
+`strong_migrate`, `model_change: false` (the rationale is risk + governance, not an assumed
+cost saving; same identity does not imply cost parity or a universal premium).
+Otherwise keep `model_change` consistent with the final target and use the
 cost comparison: Bedrock cheaper → `strong_migrate`. Within 25% and priority≠cost →
 `moderate_migrate`. Source >25% cheaper and priority=cost → `weak_migrate`/`recommend_stay`.
 Overall = weakest across models. `recommend_stay` REQUIRES a non-cost reason in
 `honest_assessment_reason` when the source provider's models are on Bedrock.
+
+**Model-specific same-model pricing:** for OpenAI GPT targets, read
+`references/shared/openai-on-bedrock.md`: verified In-Region/Geo options use the
+data-residency-tier premium, while supported Global CRIS uses standard-rate parity.
+Report the actual option; do not downgrade solely for the modest verified premium.
+**GPT-5.6 only:** above 272K context, apply 2.0x input and 1.5x output rates only when
+the selected model and inference option support that tier; the resulting gap may change
+the assessment. GPT-5.5/5.4 have no 1M tier. **Opus 5.5:** use the selected region/profile's
+flat rates from `references/shared/pricing-cache.md` throughout the full 1M context;
+do not apply the GPT multiplier. Verify other models' tiers individually.
 
 **Quota risk** (per `references/vendored/ai/bedrock-quotas.md`): high/very_high volume →
 `quota_risk: "high"` + a pre-migration quota-increase flag; medium + Claude (5× burndown) →
