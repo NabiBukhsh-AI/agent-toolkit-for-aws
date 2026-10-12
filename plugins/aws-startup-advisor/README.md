@@ -72,10 +72,10 @@ Install all 12 skills together rather than a subset: `agent-advisor` delegates t
 ## Development checks
 
 From the repository root, run `mise -C plugins/aws-startup-advisor run ci`.
-The plugin's [`mise.toml`](mise.toml) inherits the root tool configuration and runs model-reference lint plus the contract tests in `tests/`.
+The plugin's [`mise.toml`](mise.toml) inherits the root tool configuration and runs plugin-scoped Markdown lint with the shared rules, model-reference lint, artifact and reference checks, and contract tests.
 To add a check, define a task in this file and add it to `tasks.ci.depends`; the workflow keeps calling the same `ci` task.
 
-The Startup advisor workflow runs on pull requests that change this plugin, the root `mise.toml`, or `.github/workflows/startup-advisor.yml`. It also supports manual runs.
+The Startup advisor workflow runs on pull requests that change this plugin, the root `mise.toml`, `.markdownlint-cli2.yaml`, or `.github/workflows/startup-advisor.yml`. It also supports manual runs.
 
 ## Startup Architecture Advice
 

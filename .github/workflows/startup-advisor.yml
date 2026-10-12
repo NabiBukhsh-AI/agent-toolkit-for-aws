@@ -6,6 +6,7 @@ on:
     paths:
       - "plugins/aws-startup-advisor/**"
       - "mise.toml"
+      - ".markdownlint-cli2.yaml"
       - ".github/workflows/startup-advisor.yml"
   workflow_dispatch:
 
