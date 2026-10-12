@@ -397,3 +397,25 @@ def test_london_runtime_preflight_iam_and_price_agree_on_the_selected_path(monke
     assert price["available"]
     assert (price["input_per_1k_usd"], price["output_per_1k_usd"]) == (0.0044, 0.022)
     assert "runtime-in-region" in price["note"]
+
+
+@pytest.mark.parametrize("cloud", ["gcp-to-aws", "azure-to-aws"])
+def test_assessment_eligibility_precedes_same_model_shortcuts(cloud):
+    text = (SKILLS / cloud / "references/phases/design/design-ai.md").read_text()
+    selection = text.split("## Part 1:", 1)[1]
+    gate = selection.split("**New-target eligibility", 1)[1].split("\n\n", 1)[0]
+    assert "references/shared/pricing-cache.md" in gate
+    assert "references/vendored/ai/ai-anthropic-to-bedrock.md" in gate
+    assert "Opus 4.8" in gate and "Opus 5.5" in gate
+    assert "model_change: true" in gate
+    assert "source model IDs" in gate and "historical pricing" in gate
+    assert "Opus 4.6 Batch" in gate
+    assert selection.index("**New-target eligibility") < selection.lower().index(
+        "same-model availability"
+    )
+    assert "same-model availability among eligible targets" in selection.lower()
+    assessment = selection.split("**Stay-or-migrate", 1)[1].split(
+        "**Quota risk", 1
+    )[0]
+    assert "selected target is the same eligible source model" in assessment.lower()
+    assert "model_change: false" in assessment

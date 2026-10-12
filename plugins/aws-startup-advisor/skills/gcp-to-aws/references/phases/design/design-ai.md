@@ -105,6 +105,17 @@ Record what was applied: every constraint that changed a model choice or region 
 
 ## Part 1: Bedrock Model Selection
 
+**New-target eligibility — before every selection or same-model shortcut, including the
+per-model fallback:** apply `references/shared/pricing-cache.md`'s target policy and the
+model lifecycle restrictions first. Active availability alone does not make a model eligible.
+For an Opus 4.8 source, follow the Opus 5.5 mapping in
+`references/vendored/ai/ai-anthropic-to-bedrock.md`, subject to region, compliance and feature
+constraints; never retain Opus 4.8 as a new target or automatic fallback. If no eligible
+target satisfies those constraints, report the block instead. Preserve source model IDs and
+historical pricing, and retain the explicitly accepted, verified Opus 4.6 Batch alternative.
+Derive `model_change` from the final source/target identities: Opus 4.8 → 5.5 requires
+`model_change: true`; an eligible exact same-model selection remains false.
+
 **Restricted models — applies whichever guide Step 0 loaded and whatever the compliance value:** a row whose `Status` in `shared/pricing-cache.md` is `restricted (…)` (Covered Models such as Claude Fable 5 / 5.1, gated previews such as Claude Mythos) is never `recommended_model` or `backup_model` and never a default in any mapping guide. Offer one only when the user explicitly asks for a frontier model, and state its data-retention opt-in and any endpoint-specific regional or CRIS-only restrictions in the same sentence.
 
 **Multi-workload iteration (when `workloads[]` is present):**
@@ -137,11 +148,11 @@ For each `workloads[]` entry:
    - `honest_assessment` (Part 1 continued, below) does not apply — these are feature/service swaps, not a cost-driven model migration decision. Set `honest_assessment: "not_applicable"` for these workloads in the output.
 
 2. **For text/reasoning capabilities:** Apply the override hierarchy from `ai_constraints`:
-   - Q17 special features (hard override) > **same-model availability** > Q16 priority > Q18/Q21 volume and latency >
+   - Q17 special features (hard override within eligible targets) > **same-model availability among eligible targets** > Q16 priority > Q18/Q21 volume and latency >
      source model baseline
-   - **Same-model availability outranks Q16 priority.** If the source model is available on Bedrock and the target
+   - **Eligible same-model availability outranks Q16 priority.** If the source model is eligible as a new target, available on Bedrock and the target
      region carries it, keep it — a `balanced` or unset priority must not silently move the workload to a different
-     model family. Only a Q17 hard feature override (a capability the source model cannot serve) beats it. An
+     model family. Within the eligible pool, only a Q17 hard feature override (a capability the source model cannot serve) beats it. An
      explicit `ai_priority = "cost"` does not override it either; it adds a cost alternative alongside the same-model
      recommendation (see the mapping guide's Tier 2).
    - This ensures single-workload sophistication is preserved per workload
@@ -203,9 +214,10 @@ Treat model mapping as compatibility-guided, not 1:1 parity. Before cutover, req
 
 **Stay-or-migrate assessment per model:**
 
-Check the same-model case FIRST — it short-circuits the cost comparison:
+Check the same-model case FIRST after eligibility filtering and final target selection;
+otherwise use the cost-comparison cases below with `model_change` reflecting the selected target:
 
-- **Source model is available on Bedrock** (per `shared/openai-on-bedrock.md`) AND the target region carries it →
+- **Selected target is the same eligible source model**, available on Bedrock AND carried by the target region →
   `"strong_migrate"`. Set `model_change: false`. The rationale is risk (no behavior delta) plus AWS commitments,
   governance, and residency — **not** cost: Bedrock in-region is priced at OpenAI's data-residency-tier rate, about
   10% above OpenAI standard, so report a modest cost increase rather than parity. Do not downgrade the assessment for
