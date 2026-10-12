@@ -15,14 +15,6 @@ depends = ["lint:md", "lint:manifests"]
 description = "Lint markdown files"
 run = "npx markdownlint-cli2 '**/*.md' '#node_modules'"
 
-[tasks."lint:md:changed"]
-description = "Lint markdown in changed plugins and changed shared documents"
-run = "uv run --no-project python tools/lint-markdown.py"
-
-[tasks."test:lint-md-scope"]
-description = "Test markdown lint change selection"
-run = "uv run --no-project python -m unittest discover -s tools/tests -p test_lint_markdown.py"
-
 [tasks."lint:manifests"]
 description = "Validate all manifests and skill frontmatter"
 run = "python3 tools/validate.py"
