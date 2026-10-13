@@ -77,9 +77,13 @@ Based on the developer's language preference (from `$ARGUMENTS` or ask), generat
 ```python
 import boto3
 import json
+import uuid
 from botocore.exceptions import ClientError
 
 client = boto3.client("bedrock-agentcore", region_name="<REGION>")
+
+# runtimeSessionId must be 33-256 chars; a hyphenated UUID v4 (36 chars) satisfies this
+session_id = str(uuid.uuid4())
 
 try:
     response = client.invoke_agent_runtime(
@@ -88,7 +92,7 @@ try:
         payload=json.dumps({
             "prompt": "Hello, what can you do?"
         }).encode(),
-        runtimeSessionId="session-123",  # reuse for multi-turn conversations
+        runtimeSessionId=session_id,  # reuse for multi-turn conversations
     )
 
     # Handle streaming response — response["response"] is a StreamingBody
@@ -142,12 +146,16 @@ for chunk in response.iter_content(chunk_size=None):
 #### JavaScript/TypeScript (AWS SDK) — IAM auth
 
 ```typescript
+import crypto from "node:crypto";
 import {
   BedrockAgentCoreClient,
   InvokeAgentRuntimeCommand,
 } from "@aws-sdk/client-bedrock-agentcore";
 
 const client = new BedrockAgentCoreClient({ region: "<REGION>" });
+
+// runtimeSessionId must be 33-256 chars; a hyphenated UUID v4 (36 chars) satisfies this
+const sessionId = crypto.randomUUID();
 
 const response = await client.send(
   new InvokeAgentRuntimeCommand({
@@ -156,7 +164,7 @@ const response = await client.send(
     payload: new TextEncoder().encode(
       JSON.stringify({ prompt: "Hello, what can you do?" })
     ),
-    runtimeSessionId: "session-123",
+    runtimeSessionId: sessionId,
   })
 );
 
@@ -195,7 +203,7 @@ while (true) {
 
 Explain how sessions work:
 
-- **`runtimeSessionId`** — pass the same value across multiple calls to maintain conversation context
+- **`runtimeSessionId`** — pass the same value across multiple calls to maintain conversation context (must be 33–256 characters; a hyphenated UUID v4 satisfies this)
 - Generate a unique session ID per user conversation (e.g., UUID)
 - Sessions are server-side — the agent remembers the conversation history for that session ID
 - If you omit the session ID, each call is stateless (no conversation memory)
@@ -282,6 +290,7 @@ Scope the `Principal` in the trust policy as narrowly as possible (a specific ro
 ```python
 import boto3
 import json
+import uuid
 
 # Assume the role in Account B
 sts = boto3.client("sts")
@@ -301,11 +310,14 @@ agentcore = boto3.client(
     aws_session_token=creds["SessionToken"],
 )
 
+# runtimeSessionId must be 33-256 chars; a hyphenated UUID v4 (36 chars) satisfies this
+session_id = str(uuid.uuid4())
+
 response = agentcore.invoke_agent_runtime(
     agentRuntimeArn="arn:aws:bedrock-agentcore:<REGION>:<AGENT_ACCOUNT_ID>:runtime/<RUNTIME_NAME>",
     qualifier="DEFAULT",
     payload=json.dumps({"prompt": "hello"}).encode(),
-    runtimeSessionId="session-123",
+    runtimeSessionId=session_id,
 )
 ```
 
@@ -342,7 +354,7 @@ client = boto3.client("bedrock-agentcore", region_name="<REGION>")
 response = client.invoke_agent_runtime_command(
     agentRuntimeArn="<AGENT_RUNTIME_ARN>",
     qualifier="DEFAULT",
-    runtimeSessionId="session-123",   # must be an existing session
+    runtimeSessionId=session_id,   # must be an existing session (33-256 chars)
     command="ls -la /tmp && cat /tmp/status.json",
 )
 
